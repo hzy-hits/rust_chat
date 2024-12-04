@@ -4,6 +4,7 @@ resolver = "2"
 
 [workspace.dependencies]
 sqlx = { version = "0.8.2", features = [
+    "chrono",
     "runtime-tokio",
     "tls-native-tls",
     "postgres",
