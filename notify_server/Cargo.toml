@@ -2,6 +2,8 @@
 name = "notify-server"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+
 
 [dependencies]
 anyhow = { workspace = true }

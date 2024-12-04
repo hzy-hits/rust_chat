@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
     let layer = Layer::new().with_filter(LevelFilter::INFO);
     tracing_subscriber::registry().with(layer).init();
 
-    let addr = format!("0.0.0.0:6687");
+    let addr = "0.0.0.0:6687".to_string();
 
     let app = get_router();
     let listener = TcpListener::bind(&addr).await?;

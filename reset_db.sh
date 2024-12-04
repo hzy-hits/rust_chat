@@ -5,7 +5,7 @@ CONTAINER_NAME="rust_chat_db"    # Docker container name
 DB_NAME="mydatabase"             # Database name
 DB_USER="postgres"               # Database user
 DB_PASSWORD="postgres"         # Database password (if needed)
-HOST_PORT="5432"                 # Host PostgreSQL port
+HOST_PORT="15432"                 # Host PostgreSQL port
 DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@localhost:$HOST_PORT/$DB_NAME"
 
 # Check if container is running
