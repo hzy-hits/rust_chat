@@ -1,6 +1,6 @@
 server:
   port: 6688
-  db_url: postgresql://postgres:postgres@localhost:5432/mydatabase
+  db_url: postgres://postgres:postgres@localhost:15432/mydatabase
 auth:
   sk: |
     -----BEGIN PRIVATE KEY-----

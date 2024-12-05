@@ -60,6 +60,7 @@ impl AppState {
         let pool = sqlx::PgPool::connect(&config.server.db_url)
             .await
             .context("connect to db failed")?;
+
         Ok(Self {
             inner: Arc::new(AppStateInner {
                 config,
@@ -76,5 +77,44 @@ impl fmt::Debug for AppStateInner {
         f.debug_struct("AppStateInner")
             .field("config", &self.config)
             .finish()
+    }
+}
+
+#[cfg(test)]
+impl AppState {
+    pub async fn new_for_test(
+        config: AppConfig,
+    ) -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+        let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
+        let ek = EncodingKey::load(&config.auth.sk).context("load sk failed")?;
+
+        // let server_url = if let Some((prefix, _)) = config.server.db_url.rsplit_once('/') {
+        //     prefix.to_string()
+        // } else {
+        //     config.server.db_url.clone()
+        // };
+        let server_url = format!(
+            "postgres://{}:{}@{}:{}",
+            "postgres",  // username
+            "postgres",  // password
+            "localhost", // host
+            "15432"      // port
+        );
+        // let server_url = config.server.db_url.split('/').next().unwrap();
+        println!("server_url: {}", server_url);
+        let tdb = sqlx_db_tester::TestPg::new(
+            server_url.to_string(),
+            std::path::Path::new("../migrations"),
+        );
+        let pool = tdb.get_pool().await;
+        let state = Self {
+            inner: Arc::new(AppStateInner {
+                config,
+                dk,
+                ek,
+                pg_pool: pool,
+            }),
+        };
+        Ok((tdb, state))
     }
 }

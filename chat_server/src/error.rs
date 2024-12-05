@@ -1,3 +1,4 @@
+use axum::http;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
@@ -13,6 +14,8 @@ pub enum AppError {
     PasswordHashError(#[from] argon2::password_hash::Error),
     #[error("jwt error: {0}")]
     JwtError(#[from] jwt_simple::Error),
+    #[error("http header parse error: {0}")]
+    HttpHeaderError(#[from] http::header::InvalidHeaderValue),
 }
 
 impl IntoResponse for AppError {
@@ -22,6 +25,7 @@ impl IntoResponse for AppError {
             AppError::PasswordHashError(_) => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::JwtError(_) => StatusCode::FORBIDDEN,
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
+            AppError::HttpHeaderError(_) => StatusCode::BAD_REQUEST,
         };
 
         (status, Json(json!({ "error": self.to_string() }))).into_response()
