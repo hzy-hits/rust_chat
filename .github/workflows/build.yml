@@ -42,6 +42,10 @@ jobs:
       - name: Install Rust
         run: rustup toolchain install stable --component llvm-tools-preview
 
+      - name: Install Diesel CLI
+        run: |
+          cargo install diesel_cli --no-default-features --features postgres
+
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
@@ -62,14 +66,19 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
-            pg_isready -h localhost -p 5432 && break
+            pg_isready -h localhost -p 15432 && break
             echo "Waiting for PostgreSQL to be ready..."
             sleep 3
           done
 
-      - name: Run migrations
+      - name: Load environment variables
         run: |
-          diesel setup
+          set -a
+          [ -f .env ] && source .env
+          set +a
+
+      - name: Run migrations
+        run: diesel setup
 
       - name: Execute rust tests
         run: cargo nextest run --all-features
@@ -77,7 +86,7 @@ jobs:
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v2
         id: git-cliff
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         with:
           config: cliff.toml
           args: -vv --latest --strip header
@@ -86,6 +95,6 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         with:
           body: ${{ steps.git-cliff.outputs.content }}
