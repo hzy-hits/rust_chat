@@ -98,15 +98,17 @@ impl AppState {
         // } else {
         //     config.server.db_url.clone()
         // };
-        let server_url = format!(
-            "postgres://{}:{}@{}:{}",
-            "postgres",  // username
-            "postgres",  // password
-            "localhost", // host
-            "15432"      // port
-        );
+        // let server_url = format!(
+        //     "postgres://{}:{}@{}:{}",
+        //     "postgres",  // username
+        //     "postgres",  // password
+        //     "localhost", // host
+        //     "15432"      // port
+        // );
+        let post = config.server.db_url.rfind('/').expect("invalid db_url");
+        let server_url = &config.server.db_url[..post];
         // let server_url = config.server.db_url.split('/').next().unwrap();
-        println!("server_url: {}", server_url);
+        // println!("server_url: {}", server_url);
         let tdb = sqlx_db_tester::TestPg::new(
             server_url.to_string(),
             std::path::Path::new("../migrations"),

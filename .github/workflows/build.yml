@@ -3,12 +3,12 @@ name: build
 on:
   push:
     branches:
-      - master
+      - main
     tags:
       - v*
   pull_request:
     branches:
-      - master
+      - main
 
 permissions:
   contents: write
@@ -21,12 +21,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
     services:
       postgres:
-        image: postgres:14.5
+        image: postgres:15
         env:
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mydatabase
         ports:
-          - 5432:5432
-        # Set health checks to wait until postgres has started
+          - 15432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -37,21 +38,42 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+
       - name: Install Rust
         run: rustup toolchain install stable --component llvm-tools-preview
+
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-      - name: install nextest
+
+      - name: Install nextest
         uses: taiki-e/install-action@nextest
+
       - uses: Swatinem/rust-cache@v2
+
       - name: Check code format
         run: cargo fmt -- --check
+
       - name: Check the package for errors
         run: cargo check --all
+
       - name: Lint rust sources
         run: cargo clippy --all-targets --all-features --tests --benches -- -D warnings
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            pg_isready -h localhost -p 5432 && break
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 3
+          done
+
+      - name: Run migrations
+        run: |
+          diesel setup
+
       - name: Execute rust tests
         run: cargo nextest run --all-features
+
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v2
         id: git-cliff
@@ -61,6 +83,7 @@ jobs:
           args: -vv --latest --strip header
         env:
           OUTPUT: CHANGES.md
+
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
