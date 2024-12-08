@@ -1,6 +1,8 @@
-use axum::response::IntoResponse;
-
-pub(crate) async fn list_char_handler() -> impl IntoResponse {
+use crate::User;
+use axum::{response::IntoResponse, Extension};
+use tracing::info;
+pub(crate) async fn list_chat_handler(Extension(user): Extension<User>) -> impl IntoResponse {
+    info!("user: {:?}", user);
     "list_char"
 }
 
