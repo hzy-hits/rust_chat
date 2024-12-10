@@ -2,11 +2,21 @@
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
-{
+{   "workspace": "family",
     "username": "Alice Chen",
     "email": "alice@acme.org",
     "password": "123456"
 }
+### signup user2
+POST http://localhost:6688/api/signup
+Content-Type: application/json
+
+{   "workspace": "family",
+    "username": "Zhuang",
+    "email": "test@acme.org",
+    "password": "123456"
+}
+
 
 ### signin user (invalid)
 POST http://localhost:6688/api/signin
@@ -32,4 +42,8 @@ Content-Type: application/json
 
 ### get chat list
 GET http://localhost:6688/api/chat
+Authorization: Bearer {{token}}
+
+### get user list
+GET http://localhost:6688/api/users 
 Authorization: Bearer {{token}}
