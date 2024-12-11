@@ -3,7 +3,22 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Json;
 use jwt_simple::reexports::serde_json::json;
+use serde::Deserialize;
+use serde::Serialize;
 use thiserror::Error;
+use utoipa::ToSchema;
+#[derive(Debug, ToSchema, Serialize, Deserialize)]
+pub struct ErrorOutput {
+    pub error: String,
+}
+impl ErrorOutput {
+    pub fn new(error: &str) -> Self {
+        Self {
+            error: error.to_string(),
+        }
+    }
+}
+
 #[derive(Error, Debug)]
 pub enum AppError {
     #[error("Email already exists: {0}")]
@@ -16,6 +31,10 @@ pub enum AppError {
     JwtError(#[from] jwt_simple::Error),
     #[error("http header parse error: {0}")]
     HttpHeaderError(#[from] http::header::InvalidHeaderValue),
+    #[error("create chat error: {0}")]
+    CreateChatError(String),
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 impl IntoResponse for AppError {
@@ -26,6 +45,8 @@ impl IntoResponse for AppError {
             AppError::JwtError(_) => StatusCode::FORBIDDEN,
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
             AppError::HttpHeaderError(_) => StatusCode::BAD_REQUEST,
+            Self::CreateChatError(_) => StatusCode::BAD_REQUEST,
+            Self::NotFound(_) => StatusCode::NOT_FOUND,
         };
 
         (status, Json(json!({ "error": self.to_string() }))).into_response()

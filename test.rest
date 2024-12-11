@@ -2,28 +2,21 @@
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
-{   "workspace": "family",
+{   
+    "workspace": "family",
     "username": "Alice Chen",
-    "email": "alice@acme.org",
+    "email": "alice@acme.org", 
     "password": "123456"
 }
-### signup user2
+
+### signup user2 
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
-{   "workspace": "family",
-    "username": "Zhuang",
-    "email": "test@acme.org",
-    "password": "123456"
-}
-
-
-### signin user (invalid)
-POST http://localhost:6688/api/signin
-Content-Type: application/json
-
-{
-    "email": "tchen@acme.org",
+{   
+    "workspace": "family",
+    "username": "Bob Chen",
+    "email": "bob@acme.org",
     "password": "123456"
 }
 
@@ -37,13 +30,24 @@ Content-Type: application/json
     "password": "123456"
 }
 
-###
+### store token from signin response
 @token = {{signin.response.body.token}}
 
 ### get chat list
-GET http://localhost:6688/api/chat
+GET http://localhost:6688/api/chats
 Authorization: Bearer {{token}}
 
-### get user list
-GET http://localhost:6688/api/users 
+### get user list  
+GET http://localhost:6688/api/users
 Authorization: Bearer {{token}}
+
+### create chat
+POST http://localhost:6688/api/chats
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "Family Chat",
+    "members": [1, 2],
+    "public": false
+}

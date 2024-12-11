@@ -13,13 +13,14 @@ CREATE TYPE chat_type  AS ENUM(
     'single',
     'group',
     'private_channel',
-    'public_ channel'  
+    'public_channel'  
 );
 
 CREATE TABLE IF NOT EXISTS chats (
     id bigserial PRIMARY KEY,
-    name VARCHAR(64) NOT NULL,
+    name VARCHAR(64) ,
     type chat_type NOT NULL,
+    members bigint[] NOT NULL,
     created_at timestamptz DEFAULT CURRENT_TIMESTAMP
 );      
 

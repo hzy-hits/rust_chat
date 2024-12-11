@@ -1,6 +1,6 @@
 use axum::response::IntoResponse;
 
-pub(crate) async fn _send_message_handler() -> impl IntoResponse {
+pub(crate) async fn send_message_handler() -> impl IntoResponse {
     "send_message"
 }
 
