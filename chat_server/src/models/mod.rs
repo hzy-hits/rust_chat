@@ -1,7 +1,7 @@
 pub(crate) mod chat;
+pub(crate) mod file;
 pub(crate) mod user;
 pub(crate) mod workspace;
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -55,4 +55,9 @@ pub struct Chat {
     pub r#type: ChatType,
     pub members: Vec<i64>,
     pub created_at: DateTime<Utc>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatFile {
+    pub ext: String, // extract ext from filename or mime type
+    pub hash: String,
 }

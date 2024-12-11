@@ -51,3 +51,23 @@ Authorization: Bearer {{token}}
     "members": [1, 2],
     "public": false
 }
+### upload files
+POST http://localhost:6688/api/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=MyBoundary
+
+--MyBoundary
+Content-Disposition: form-data; filename="xdiff1.png"
+Content-Type: application/octet-stream
+
+< rust_chat/asset/notify_server.png
+--MyBoundary
+Content-Disposition: form-data; filename="hello.txt"
+Content-Type: text/plain
+
+Hello, World!
+--MyBoundary--
+
+### get files
+GET http://localhost:6688/api/files/1/128/2ba/f0cd89cf1023cd3f5f09f5c3cddfdc80c4.png
+Authorization: Bearer {{token}}
