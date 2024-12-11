@@ -6,11 +6,10 @@ use argon2::{
 };
 
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
 
-use crate::{error::AppError, models::User};
+use crate::{error::AppError, models::User, AppState};
 
-use super::{ChatUser, Workspace};
+use super::ChatUser;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateUser {
@@ -25,57 +24,88 @@ pub struct SigninUser {
     pub password: String,
 }
 
-impl User {
-    pub async fn find_by_email(
-        email: &str,
-        pool: &sqlx::PgPool,
-    ) -> anyhow::Result<Option<Self>, AppError> {
+impl AppState {
+    #[allow(dead_code)]
+    pub async fn find_user_by_email(&self, email: &str) -> anyhow::Result<Option<User>, AppError> {
         let ret = sqlx::query_as(
             "SELECT id,ws_id, username, email,created_at FROM users WHERE email = $1",
         )
         .bind(email)
-        .fetch_optional(pool)
+        .fetch_optional(&self.pg_pool)
         .await?;
         Ok(ret)
     }
 
-    pub async fn create(input: &CreateUser, pool: &PgPool) -> Result<Self, AppError> {
+    pub async fn create_user(&self, input: &CreateUser) -> Result<User, AppError> {
         let password_hash = hash_password(&input.password)?;
-        let user = Self::find_by_email(&input.email, pool).await?;
-        if user.is_some() {
-            return Err(AppError::EmailAlreadyExists(input.email.clone()));
-        }
-        let ws = match Workspace::find_by_name(&input.workspace, pool).await? {
+
+        // start a transaction
+        let mut tx = self.pg_pool.begin().await?;
+
+        // search for the workspace
+        let ws = match self.find_workspace_by_name(&input.workspace).await? {
             Some(ws) => ws,
-            None => Workspace::create(&input.workspace, 0, pool).await?,
+            None => self.create_workspace(&input.workspace, 0).await?,
         };
-        let user: User = sqlx::query_as(
+
+        // try to insert the user
+        let user_result = sqlx::query_as::<_, User>(
             r#"
-            INSERT INTO users (ws_id,email,username,password_hash)
-            VALUES ($1,$2,$3,$4)
-            RETURNING id,ws_id,username,email,created_at
-            "#,
+        INSERT INTO users (ws_id, email, username, password_hash)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, ws_id, username, email, created_at
+        "#,
         )
         .bind(ws.id)
         .bind(&input.email)
         .bind(&input.username)
         .bind(password_hash)
-        .fetch_one(pool)
-        .await?;
+        .fetch_one(&mut *tx)
+        .await;
+
+        // handle the result
+        let user = match user_result {
+            Ok(user) => user,
+            Err(err) => {
+                tx.rollback().await?; // rollback the transaction
+                match err {
+                    sqlx::Error::Database(db_err) => {
+                        // PostgreSQL unique constraint violation
+                        if db_err.code().as_deref() == Some("23505")
+                            && db_err.constraint() == Some("users_email_key")
+                        {
+                            return Err(AppError::EmailAlreadyExists(input.email.clone()));
+                        }
+                        return Err(AppError::SqlxError(sqlx::Error::Database(db_err)));
+                    }
+                    err => return Err(AppError::SqlxError(err)),
+                }
+            }
+        };
+
+        // if the workspace owner is not set, set it to the current user
         if ws.owner_id == 0 {
-            ws.update_owner(user.id as _, pool).await?;
+            sqlx::query("UPDATE workspaces SET owner_id = $1 WHERE id = $2")
+                .bind(user.id)
+                .bind(ws.id)
+                .execute(&mut *tx)
+                .await?;
         }
+
+        //submits the transaction
+        tx.commit().await?;
+
         Ok(user)
     }
 
-    pub async fn verify(input: &SigninUser, pool: &PgPool) -> Result<Option<Self>, AppError> {
+    pub async fn verify_user(&self, input: &SigninUser) -> Result<Option<User>, AppError> {
         let user: Option<User> = sqlx::query_as(
             "
             SELECT id,ws_id,username,email,password_hash,created_at FROM users WHERE email = $1
             ",
         )
         .bind(&input.email)
-        .fetch_optional(pool)
+        .fetch_optional(&self.pg_pool)
         .await?;
         match user {
             Some(mut user) => {
@@ -93,8 +123,8 @@ impl User {
     }
 }
 
-impl ChatUser {
-    pub async fn fetch_by_ids(ids: &[i64], pool: &PgPool) -> Result<Vec<Self>, AppError> {
+impl AppState {
+    pub async fn fetch_chat_user_by_ids(&self, ids: &[i64]) -> Result<Vec<ChatUser>, AppError> {
         let users = sqlx::query_as(
             r#"
         SELECT id, username, email
@@ -103,12 +133,12 @@ impl ChatUser {
         "#,
         )
         .bind(ids)
-        .fetch_all(pool)
+        .fetch_all(&self.pg_pool)
         .await?;
         Ok(users)
     }
     #[allow(dead_code)]
-    pub async fn fetch_all(ws_id: i64, pool: &PgPool) -> Result<Vec<Self>, AppError> {
+    pub async fn fetch_chat_users(&self, ws_id: i64) -> Result<Vec<ChatUser>, AppError> {
         let users = sqlx::query_as(
             r#"
         SELECT id, username, email
@@ -117,7 +147,7 @@ impl ChatUser {
         "#,
         )
         .bind(ws_id)
-        .fetch_all(pool)
+        .fetch_all(&self.pg_pool)
         .await?;
         Ok(users)
     }
@@ -184,8 +214,6 @@ impl SigninUser {
 mod tests {
     use super::*;
     use anyhow::Result;
-    use sqlx_db_tester::TestPg;
-    use std::path::Path;
 
     #[test]
     fn hash_password_and_verify_should_work() -> Result<()> {
@@ -198,15 +226,10 @@ mod tests {
 
     #[tokio::test]
     async fn create_duplicate_user_should_fail() -> Result<()> {
-        let tdb = TestPg::new(
-            "postgres://postgres:postgres@localhost:15432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = tdb.get_pool().await;
+        let (_tdb, state) = AppState::new_for_test().await?;
 
-        let input = CreateUser::new("none", "test", "test@test.test", "hunter42");
-        User::create(&input, &pool).await?;
-        let ret = User::create(&input, &pool).await;
+        let input = CreateUser::new("acme", "test", "test2@acme.org", "hunter42");
+        let ret = state.create_user(&input).await;
         match ret {
             Err(AppError::EmailAlreadyExists(email)) => {
                 assert_eq!(email, input.email);
@@ -218,26 +241,22 @@ mod tests {
 
     #[tokio::test]
     async fn create_and_verify_user_should_work() -> Result<()> {
-        let tdb = TestPg::new(
-            "postgres://postgres:postgres@localhost:15432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = tdb.get_pool().await;
+        let (_tdb, state) = AppState::new_for_test().await?;
 
         let input = CreateUser::new("none", "test", "test@test.test", "hunter42");
-        let user = User::create(&input, &pool).await?;
+        let user = state.create_user(&input).await?;
         assert_eq!(user.email, input.email);
         assert_eq!(user.username, input.username);
         assert!(user.id > 0);
 
-        let user = User::find_by_email(&input.email, &pool).await?;
+        let user = state.find_user_by_email(&input.email).await?;
         assert!(user.is_some());
         let user = user.unwrap();
         assert_eq!(user.email, input.email);
         assert_eq!(user.username, input.username);
 
         let input = SigninUser::new(&input.email, &input.password);
-        let user = User::verify(&input, &pool).await?;
+        let user = state.verify_user(&input).await?;
         assert!(user.is_some());
 
         Ok(())

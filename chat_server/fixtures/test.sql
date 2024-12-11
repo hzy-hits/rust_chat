@@ -11,10 +11,10 @@ INSERT INTO users(ws_id, email, username, password_hash)
 (1, 'daisy@acme.org', 'Daisy Chen', '$argon2id$v=19$m=19456,t=2,p=1$MxGhY+ib/kplwBPLa7u2ug$c5h9u7Sc8Px8J5+qgNdOjSY7ZJO2QN4rugKpapGW4XU');
 -- insert 4 chats
 -- insert public/private channel
-INSERT INTO chats(ws_id, name, type, members)
+INSERT INTO chats(ws_id, name, chat_type, members)
   VALUES (1, 'general', 'public_channel', '{1,2,3,4,5}'),
 (1, 'private', 'private_channel', '{1,2,3}');
 -- insert unnamed chat
-INSERT INTO chats(ws_id, type, members)
+INSERT INTO chats(ws_id, chat_type, members)
   VALUES (1, 'single', '{1,2}'),
 (1, 'group', '{1,3,4}');

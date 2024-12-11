@@ -21,7 +21,7 @@ pub(crate) async fn file_handler(
     State(state): State<AppState>,
     Path((ws_id, path)): Path<(i64, String)>,
 ) -> Result<impl IntoResponse, AppError> {
-    if user.ws_id != ws_id as i64 {
+    if user.ws_id != ws_id {
         return Err(AppError::NotFound(
             "File doesn't exist or you don't have permission".to_string(),
         ));
@@ -44,7 +44,7 @@ pub(crate) async fn upload_handler(
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let ws_id = user.ws_id as u64;
-    let base_dir = state.config.server.base_dir.join(ws_id.to_string());
+    let base_dir = &state.config.server.base_dir;
     let mut files = vec![];
     while let Some(field) = multipart.next_field().await.unwrap() {
         let filename = field.file_name().map(|name| name.to_string());
@@ -54,16 +54,16 @@ pub(crate) async fn upload_handler(
             continue;
         };
 
-        let file = ChatFile::new(&filename, &data);
+        let file = ChatFile::new(ws_id, &filename, &data);
 
-        let path = file.path(&base_dir);
+        let path = file.path(base_dir);
         if path.exists() {
             info!("File {} already exists: {:?}", filename, path);
         } else {
             fs::create_dir_all(path.parent().expect("file path parent should exists")).await?;
             fs::write(path, data).await?;
         }
-        files.push(file.url(ws_id));
+        files.push(file.url());
     }
     Ok(Json(files))
 }
