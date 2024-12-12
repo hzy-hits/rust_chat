@@ -2,7 +2,7 @@ use tokio::net::TcpListener;
 
 use anyhow::Result;
 
-use notify_server::get_router;
+use notify_server::{get_router, set_up_pg_listener};
 use tracing::{info, level_filters::LevelFilter};
 use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
 #[tokio::main]
@@ -12,7 +12,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::registry().with(layer).init();
 
     let addr = "0.0.0.0:6687".to_string();
-
+    set_up_pg_listener().await?;
     let app = get_router();
     let listener = TcpListener::bind(&addr).await?;
 

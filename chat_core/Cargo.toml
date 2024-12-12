@@ -1,13 +1,9 @@
 [package]
-name = "chat-server"
+name = "chat_core"
 version = "0.1.0"
-edition = "2021"
-license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2024"
 
 [dependencies]
-
 anyhow = { workspace = true }
 thiserror.workspace = true
 sqlx = { workspace = true, features = [
@@ -37,4 +33,3 @@ utoipa = "5.2.0"
 sha1 = "0.10.6"
 hex = "0.4.3"
 mime_guess = "2.0.5"
-chat_core = { path = "../chat_core" }

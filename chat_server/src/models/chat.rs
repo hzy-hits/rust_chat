@@ -1,9 +1,8 @@
+use chat_core::{Chat, ChatType, User};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
 use crate::{AppError, AppState};
-
-use super::{Chat, ChatType, User};
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
 pub(crate) struct CreateChat {

@@ -1,9 +1,6 @@
 use crate::{
-    models::{
-        chat::{CreateChat, UpdateChat},
-        Chat,
-    },
-    AppError, AppState, User,
+    models::chat::{CreateChat, UpdateChat},
+    AppError, AppState,
 };
 use axum::{
     extract::{Path, State},
@@ -11,6 +8,7 @@ use axum::{
     response::IntoResponse,
     Extension, Json,
 };
+use chat_core::{Chat, User};
 use sqlx::{Postgres, Transaction};
 use tracing::info;
 

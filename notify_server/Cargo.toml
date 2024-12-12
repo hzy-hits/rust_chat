@@ -18,3 +18,4 @@ tracing-subscriber = { workspace = true }
 axum-extra = { version = "0.9.6", features = ["typed-header"] }
 futures = "0.3.31"
 tokio-stream = "0.1.16"
+chat_core = { path = "../chat_core" }

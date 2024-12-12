@@ -5,11 +5,10 @@ use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
 };
 
+use chat_core::{ChatUser, User};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::AppError, models::User, AppState};
-
-use super::ChatUser;
+use crate::{error::AppError, AppState};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateUser {
@@ -187,20 +186,20 @@ fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
     Ok(is_valid)
 }
 
-#[cfg(test)]
-impl User {
-    pub fn new(id: i64, username: &str, email: &str) -> Self {
-        use chrono::Utc;
-        Self {
-            id,
-            ws_id: 0,
-            username: username.to_string(),
-            email: email.to_string(),
-            password_hash: None,
-            created_at: Utc::now(),
-        }
-    }
-}
+// #[cfg(test)]
+// impl User {
+//     pub fn new(id: i64, username: &str, email: &str) -> Self {
+//         use chrono::Utc;
+//         Self {
+//             id,
+//             ws_id: 0,
+//             username: username.to_string(),
+//             email: email.to_string(),
+//             password_hash: None,
+//             created_at: Utc::now(),
+//         }
+//     }
+// }
 
 #[cfg(test)]
 impl CreateUser {

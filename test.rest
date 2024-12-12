@@ -69,7 +69,7 @@ Hello, World!
 --MyBoundary--
 
 ### get files
-GET http://localhost:6688/api/files/1/128/2ba/f0cd89cf1023cd3f5f09f5c3cddfdc80c4.png
+GET http://localhost:6688/api/files/1/0e1/907/702a2d2fe4dc56a8e682316556d5ff09b9.png
 Authorization: Bearer {{token}}
 
 ### send a message

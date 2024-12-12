@@ -3,22 +3,23 @@ mod error;
 mod handlers;
 mod middlewares;
 mod models;
-mod utils;
 use anyhow::Context;
 use axum::{
     middleware::from_fn_with_state,
     routing::{get, post},
     Router,
 };
+use chat_core::{
+    middlewares::{set_layer, verify_token, TokenVerify},
+    DecodingKey, EncodingKey, User,
+};
 pub use config::AppConfig;
 pub use error::AppError;
 use handlers::*;
 
-use middlewares::{chat::verify_chat, set_layer, verify_token};
-pub use models::User;
+use middlewares::chat::verify_chat;
 
 use tokio::fs;
-pub use utils::jwt::{DecodingKey, EncodingKey};
 
 use core::fmt;
 use std::{ops::Deref, sync::Arc};
@@ -52,7 +53,7 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
         .nest("/chats", chat)
         .route("/upload", post(upload_handler))
         .route("/files/:ws_id/*path", get(file_handler))
-        .layer(from_fn_with_state(state.clone(), verify_token))
+        .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
         // routes doesn't need token verification
         .route("/signin", post(signin_handler))
         .route("/signup", post(signup_handler));
@@ -68,6 +69,14 @@ impl Deref for AppState {
     type Target = AppStateInner;
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl TokenVerify for AppState {
+    type Error = AppError;
+
+    fn verify(&self, token: &str) -> Result<User, Self::Error> {
+        Ok(self.dk.verify(token)?)
     }
 }
 
