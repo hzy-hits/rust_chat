@@ -2,18 +2,18 @@
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
-{   
+{
     "workspace": "family",
     "username": "Alice Chen",
-    "email": "alice@acme.org", 
+    "email": "alice@acme.org",
     "password": "123456"
 }
 
-### signup user2 
+### signup user2
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
-{   
+{
     "workspace": "family",
     "username": "Bob Chen",
     "email": "bob@acme.org",
@@ -37,7 +37,7 @@ Content-Type: application/json
 GET http://localhost:6688/api/chats
 Authorization: Bearer {{token}}
 
-### get user list  
+### get user list
 GET http://localhost:6688/api/users
 Authorization: Bearer {{token}}
 
@@ -70,4 +70,18 @@ Hello, World!
 
 ### get files
 GET http://localhost:6688/api/files/1/128/2ba/f0cd89cf1023cd3f5f09f5c3cddfdc80c4.png
+Authorization: Bearer {{token}}
+
+### send a message
+POST http://localhost:6688/api/chats/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "content": "Hello, World!",
+    "files": []
+}
+
+### get messages
+GET http://localhost:6688/api/chats/1/messages?limit=6&last_id=5
 Authorization: Bearer {{token}}

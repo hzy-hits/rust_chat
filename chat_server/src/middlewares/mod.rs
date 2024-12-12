@@ -14,6 +14,7 @@ const REQUEST_ID_HEADER: &str = "x-request-id";
 pub use auth::verify_token;
 
 mod auth;
+pub mod chat;
 mod request_id;
 mod server_time;
 pub fn set_layer(app: Router) -> Router {

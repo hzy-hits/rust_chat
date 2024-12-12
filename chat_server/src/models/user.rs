@@ -151,6 +151,20 @@ impl AppState {
         .await?;
         Ok(users)
     }
+    #[allow(dead_code)]
+    pub async fn find_user_by_id(&self, id: i64) -> Result<Option<User>, AppError> {
+        let user = sqlx::query_as(
+            r#"
+        SELECT id, ws_id, username, email, created_at
+        FROM users
+        WHERE id = $1
+        "#,
+        )
+        .bind(id)
+        .fetch_optional(&self.pg_pool)
+        .await?;
+        Ok(user)
+    }
 }
 
 fn hash_password(password: &str) -> Result<String, AppError> {
@@ -215,15 +229,23 @@ mod tests {
     use super::*;
     use anyhow::Result;
 
-    #[test]
-    fn hash_password_and_verify_should_work() -> Result<()> {
+    #[tokio::test]
+    async fn hash_password_and_verify_should_work() -> Result<()> {
         let password = "hunter42";
         let password_hash = hash_password(password)?;
         assert_eq!(password_hash.len(), 97);
         assert!(verify_password(password, &password_hash)?);
         Ok(())
     }
-
+    #[tokio::test]
+    async fn find_user_by_id_should_work() -> Result<()> {
+        let (_tdb, state) = AppState::new_for_test().await?;
+        let user = state.find_user_by_id(1).await?;
+        assert!(user.is_some());
+        let user = user.unwrap();
+        assert_eq!(user.id, 1);
+        Ok(())
+    }
     #[tokio::test]
     async fn create_duplicate_user_should_fail() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
