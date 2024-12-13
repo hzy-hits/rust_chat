@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS chats (
     ws_id bigint NOT NULL REFERENCES workspaces(id),
     chat_type chat_type NOT NULL,
     members bigint[] NOT NULL,
-    created_at timestamptz DEFAULT CURRENT_TIMESTAMP
+    created_at timestamptz DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (ws_id, name,members)
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -51,5 +52,12 @@ CREATE TABLE IF NOT EXISTS messages (
     files text[] DEFAULT '{}',
     created_at timestamptz DEFAULT CURRENT_TIMESTAMP
 );
+
+-- create index for messages for chat_id and created_at order by created_at desc
 CREATE INDEX IF NOT EXISTS chat_id_created_at_index ON messages(chat_id, created_at DESC);
+
+-- create index for messages for sender_id
 CREATE INDEX IF NOT EXISTS sender_id_index ON messages(sender_id);
+
+-- create index for chat members
+CREATE INDEX IF NOT EXISTS chat_members_index ON chats USING GIN(members);

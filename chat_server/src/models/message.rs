@@ -9,11 +9,14 @@ use crate::{models::ChatFile, AppError, AppState};
 #[derive(Debug, Clone, Serialize, ToSchema, Deserialize)]
 pub struct CreateMessage {
     pub content: String,
+    #[serde(default)]
     pub files: Vec<String>,
 }
 #[derive(Debug, Clone, Serialize, IntoParams, ToSchema, Deserialize)]
 pub struct ListMessages {
+    #[serde(default)]
     pub last_id: Option<u64>,
+    #[serde(default)]
     pub limit: u64,
 }
 
@@ -63,7 +66,11 @@ impl AppState {
         chat_id: u64,
     ) -> Result<Vec<Message>, AppError> {
         let last_id = input.last_id.unwrap_or(i64::MAX as _);
-
+        let limit = match input.limit {
+            0 => i64::MAX,
+            1..=100 => input.limit as _,
+            _ => 100,
+        };
         let messages = sqlx::query_as(
             r#"
         SELECT id, chat_id, sender_id, content, files, created_at
@@ -75,7 +82,7 @@ impl AppState {
         )
         .bind(chat_id as i64)
         .bind(last_id as i64)
-        .bind(input.limit as i64)
+        .bind(limit)
         .fetch_all(&self.pg_pool)
         .await?;
         Ok(messages)

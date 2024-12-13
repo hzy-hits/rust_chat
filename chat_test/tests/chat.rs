@@ -68,7 +68,7 @@ impl NotifyServer {
                 .unwrap();
         });
 
-        let mut es = EventSource::get(format!("http://{}/events?access_token={}", addr, token));
+        let mut es = EventSource::get(format!("http://{}/events?token={}", addr, token));
 
         tokio::spawn(async move {
             while let Some(event) = es.next().await {
@@ -149,10 +149,11 @@ impl ChatServer {
             .post(format!("http://{}/api/chats", self.addr))
             .header("Authorization", format!("Bearer {}", self.token))
             .header("Content-Type", "application/json")
-            .body(r#"{"name": "test", "members": [1, 2], "public": false}"#);
+            .body(r#"{"name": "test", "members": [1, 2], "public": false,"chatType":"privateChannel"}"#);
         let res = res.send().await?;
         assert_eq!(res.status(), StatusCode::CREATED);
         let chat: Chat = res.json().await?;
+        println!("should be ok");
         assert_eq!(chat.name.as_ref().unwrap(), "test");
         assert_eq!(chat.members, vec![1, 2]);
         assert_eq!(chat.chat_type, ChatType::PrivateChannel);

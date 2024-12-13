@@ -64,8 +64,11 @@ impl AppState {
         .await;
 
         // handle the result
-        let user = match user_result {
-            Ok(user) => user,
+        let mut user = match user_result {
+            Ok(mut user) => {
+                user.ws_name = ws.name.clone();
+                user
+            }
             Err(err) => {
                 tx.rollback().await?; // rollback the transaction
                 match err {
@@ -90,6 +93,7 @@ impl AppState {
                 .bind(ws.id)
                 .execute(&mut *tx)
                 .await?;
+            user.ws_name = ws.name;
         }
 
         //submits the transaction

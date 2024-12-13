@@ -14,7 +14,7 @@ use tracing::warn;
 use super::TokenVerify;
 #[derive(Debug, Deserialize)]
 struct Params {
-    access_token: String,
+    token: String,
 }
 pub async fn verify_token<T>(State(state): State<T>, req: Request, next: Next) -> Response
 where
@@ -27,7 +27,7 @@ where
             Err(e) => {
                 if e.is_missing() {
                     match Query::<Params>::from_request_parts(&mut parts, &state).await {
-                        Ok(params) => params.access_token.clone(),
+                        Ok(params) => params.token.clone(),
                         Err(e) => {
                             let msg = format!("parse query params failed: {}", e);
                             warn!(msg);
@@ -104,7 +104,7 @@ mod tests {
 
         // good token
         let req = Request::builder()
-            .uri(format!("/?access_token={}", token))
+            .uri(format!("/?token={}", token))
             .body(Body::empty())?;
         let res = app.clone().oneshot(req).await?;
         assert_eq!(res.status(), StatusCode::OK);
@@ -116,7 +116,7 @@ mod tests {
 
         // bad token
         let req = Request::builder()
-            .uri("/?access_token=bad-token")
+            .uri("/?token=bad-token")
             .body(Body::empty())?;
         let res = app.oneshot(req).await?;
         assert_eq!(res.status(), StatusCode::FORBIDDEN);
