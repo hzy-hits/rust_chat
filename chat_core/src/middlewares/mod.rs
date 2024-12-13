@@ -1,13 +1,13 @@
 use std::fmt;
 
-use axum::{Router, middleware::from_fn};
+use axum::{middleware::from_fn, Router};
 use request_id::set_request_id;
 use server_time::ServerTime;
 use tower::ServiceBuilder;
 use tower_http::{
-    LatencyUnit,
     compression::CompressionLayer,
     trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    LatencyUnit,
 };
 use tracing::Level;
 const SERVER_TIME_HEADER: &str = "x-server-time";

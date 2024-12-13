@@ -2,4 +2,9 @@
 
 [files]
 
-extend-exclude = ["CHANGELOG.md", "chat_server/fixtures/test.sql"]
+extend-exclude = [
+    "CHANGELOG.md",
+    "chat_server/fixtures/test.sql",
+    "chat_core/fixtures/*",
+    "notify_server/*.html",
+]

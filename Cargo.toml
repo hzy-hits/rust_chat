@@ -1,5 +1,5 @@
 [workspace]
-members = [ "chat_core","chat_server", "notify_server"]
+members = ["chat_core", "chat_server", "chat_test", "notify_server"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -9,6 +9,7 @@ sqlx = { version = "0.8.2", features = [
     "tls-native-tls",
     "postgres",
 ] }
+
 anyhow = "1.0"
 axum = { version = "0.7.9", features = [
     "http2",
@@ -17,9 +18,20 @@ axum = { version = "0.7.9", features = [
     "tracing",
     # "macros",
 ] }
-thiserror = "2.0.4"
+thiserror = "2.0.6"
 tokio = { version = "1.42.0", features = ["rt", "rt-multi-thread", "macros"] }
 serde = { version = "1.0.215", features = ["derive"] }
 serde_yaml = "0.9.34"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
+axum-extra = { version = "0.9.6", features = ["typed-header"] }
+chrono = { version = "0.4.38", features = ["serde"] }
+tower = "0.5.1"
+tower-http = { version = "0.6.2", features = ["compression-full", "trace"] }
+jwt-simple = { version = "0.12", default-features = false, features = [
+    "pure-rust",
+] }
+chat_server = { path = "./chat_server" }
+notify_server = { path = "./notify_server" }
+chat_core = { path = "./chat_core" }
+chat_test = { path = "./chat_test" }

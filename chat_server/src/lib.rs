@@ -3,6 +3,7 @@ mod error;
 mod handlers;
 mod middlewares;
 mod models;
+mod openapi;
 use anyhow::Context;
 use axum::{
     middleware::from_fn_with_state,
@@ -16,26 +17,25 @@ use chat_core::{
 pub use config::AppConfig;
 pub use error::AppError;
 use handlers::*;
-
 use middlewares::chat::verify_chat;
 
+use openapi::OpenApiRouter;
 use tokio::fs;
 
 use core::fmt;
 use std::{ops::Deref, sync::Arc};
 #[derive(Debug, Clone)]
-pub(crate) struct AppState {
+pub struct AppState {
     pub inner: Arc<AppStateInner>,
 }
 #[allow(unused)]
-pub(crate) struct AppStateInner {
+pub struct AppStateInner {
     pub(crate) config: AppConfig,
     pub(crate) dk: DecodingKey,
     pub(crate) ek: EncodingKey,
     pub(crate) pg_pool: sqlx::PgPool,
 }
-pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
-    let state = AppState::try_new(config).await?;
+pub async fn get_router(state: AppState) -> Result<Router, AppError> {
     let chat = Router::new()
         .route(
             "/:id",
@@ -59,6 +59,7 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
         .route("/signup", post(signup_handler));
 
     let app = Router::new()
+        .openapi()
         .route("/", get(index_handler))
         .nest("/api", api)
         .with_state(state);
@@ -110,7 +111,7 @@ impl fmt::Debug for AppStateInner {
     }
 }
 
-#[cfg(test)]
+#[cfg(feature = "test-util")]
 mod test_util {
     use super::*;
     use sqlx::{Executor, PgPool};
