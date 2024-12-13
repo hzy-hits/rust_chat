@@ -27,8 +27,8 @@ pub enum AppError {
     SqlxError(#[from] sqlx::Error),
     #[error("password hashing error: {0}")]
     PasswordHashError(#[from] argon2::password_hash::Error),
-    #[error("jwt error: {0}")]
-    JwtError(#[from] jwt_simple::Error),
+    #[error("general error: {0}")]
+    AnyError(#[from] anyhow::Error),
     #[error("http header parse error: {0}")]
     HttpHeaderError(#[from] http::header::InvalidHeaderValue),
     #[error("create chat error: {0}")]
@@ -52,7 +52,7 @@ impl IntoResponse for AppError {
         let status = match self {
             AppError::SqlxError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::PasswordHashError(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            AppError::JwtError(_) => StatusCode::FORBIDDEN,
+            Self::AnyError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
             AppError::HttpHeaderError(_) => StatusCode::BAD_REQUEST,
             Self::CreateChatError(_) => StatusCode::BAD_REQUEST,
