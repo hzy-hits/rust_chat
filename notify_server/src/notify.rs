@@ -1,10 +1,10 @@
-use std::{collections::HashSet, sync::Arc};
-
 use chat_core::{Chat, Message};
 use futures::StreamExt;
 use jwt_simple::reexports::serde_json;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgListener;
+use std::{collections::HashSet, sync::Arc};
+use tokio::time::{self};
 use tracing::{info, warn};
 
 use crate::{sse::AppEvent, AppState};
@@ -89,25 +89,43 @@ fn get_affected_chat_user_ids(old: Option<&Chat>, new: Option<&Chat>) -> HashSet
 }
 
 pub async fn setup_pg_listener(state: AppState) -> anyhow::Result<()> {
-    let mut listener = PgListener::connect(&state.config.server.db_url).await?;
-    listener.listen("chat_updated").await?;
-    listener.listen("chat_message_created").await?;
-    let mut stream = listener.into_stream();
     tokio::spawn(async move {
-        while let Some(Ok(notif)) = stream.next().await {
-            info!("Received notification: {:?}", notif);
-            let notification = Notification::load(notif.channel(), notif.payload())?;
-            let users = &state.users;
-            for user_id in notification.user_ids {
-                if let Some(tx) = users.get(&user_id) {
-                    info!("Sending notification to user {}", user_id);
-                    if let Err(e) = tx.send(notification.event.clone()) {
-                        warn!("Failed to send notification to user {}: {}", user_id, e);
+        loop {
+            match PgListener::connect(&state.config.server.db_url).await {
+                Ok(mut listener) => {
+                    if let Err(e) = listener.listen("chat_updated").await {
+                        warn!("Failed to listen on chat_updated: {:?}", e);
+                        continue;
+                    }
+                    if let Err(e) = listener.listen("chat_message_created").await {
+                        warn!("Failed to listen on chat_message_created: {:?}", e);
+                        continue;
+                    }
+                    let mut stream = listener.into_stream();
+                    while let Some(Ok(notif)) = stream.next().await {
+                        info!("Received notification: {:?}", notif);
+                        match Notification::load(notif.channel(), notif.payload()) {
+                            Ok(notification) => {
+                                let users = &state.users;
+                                for user_id in notification.user_ids {
+                                    if let Some(tx) = users.get(&user_id) {
+                                        if let Err(e) = tx.send(notification.event.clone()) {
+                                            warn!(
+                                                "Failed to send notification to user {}: {}",
+                                                user_id, e
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => warn!("Failed to load notification: {:?}", e),
+                        }
                     }
                 }
+                Err(e) => warn!("Failed to connect to database: {:?}", e),
             }
+            tokio::time::sleep(time::Duration::from_secs(5)).await;
         }
-        Ok::<_, anyhow::Error>(())
     });
     Ok(())
 }

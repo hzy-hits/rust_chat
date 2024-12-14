@@ -1,45 +1,74 @@
 ### signup user
+
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
 {
     "workspace": "test",
-    "username": "Alice Chen",
-    "email": "alice@acme.org",
+    "username": "Test User 1",
+    "email": "test@test.test",
     "password": "123456"
 }
 
-### signup user2
+### signup user
+
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
 {
     "workspace": "test",
-    "username": "Bob Chen",
-    "email": "bob@acme.org",
+    "username": "Test User 2",
+    "email": "test1@test.test",
     "password": "123456"
+}
+
+### signup user
+
+POST http://localhost:6688/api/signup
+Content-Type: application/json
+
+{
+    "workspace": "test",
+    "username": "Test User 3",
+    "email": "test2@test.test",
+    "password": "123456"
+}
+
+### signin user (invalid)
+
+POST http://localhost:6688/api/signin
+Content-Type: application/json
+
+{
+    "email": "test@test.test",
+    "password": "wrongpassword"
 }
 
 ### signin user (valid)
+
 # @name signin
 POST http://localhost:6688/api/signin
 Content-Type: application/json
 
 {
-    "email": "alice@acme.org",
+    "email": "test@test.test",
     "password": "123456"
 }
 
-### store token from signin response
 @token = {{signin.response.body.token}}
 
-### get chat list
-GET http://localhost:6688/api/chats
-Authorization: Bearer {{token}}
+### signin user (valid)
 
-### get user list
-GET http://localhost:6688/api/users
-Authorization: Bearer {{token}}
+# @name signin1
+POST http://localhost:6688/api/signin
+Content-Type: application/json
+
+{
+    "email": "test2@test.test",
+    "password": "123456"
+}
+
+@token1 = {{signin1.response.body.token}}
 
 ### create chat
 POST http://localhost:6688/api/chats
@@ -47,11 +76,60 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "name": "Family Chat",
-    "members": [1, 3],
+    "name": "project X",
+    "chatType": "group",
+    "members": [1, 2],
     "public": false
 }
+
+### create direct chat
+POST http://localhost:6688/api/chats
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "chatType": "single",
+    "members": [1, 2],
+    "public": false
+}
+
+### create chats without me
+POST http://localhost:6688/api/chats
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+    "name": "project Y",
+    "chatType": "group",
+    "members": [2, 3],
+    "public": false
+}
+
+### create direct chat without me
+POST http://localhost:6688/api/chats
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+    "chatType": "single",
+    "members": [1, 2],
+    "public": false
+}
+
+
+### get chat list
+
+GET http://localhost:6688/api/chats
+Authorization: Bearer {{token}}
+
+### get user list
+
+GET http://localhost:6688/api/users
+Authorization: Bearer {{token}}
+
+
 ### upload files
+
 POST http://localhost:6688/api/upload
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=MyBoundary
@@ -60,7 +138,7 @@ Content-Type: multipart/form-data; boundary=MyBoundary
 Content-Disposition: form-data; filename="xdiff1.png"
 Content-Type: application/octet-stream
 
-< rust_chat/asset/notify_server.png
+< /Users/test/snapshots/xdiff1.png
 --MyBoundary
 Content-Disposition: form-data; filename="hello.txt"
 Content-Type: text/plain
@@ -68,20 +146,57 @@ Content-Type: text/plain
 Hello, World!
 --MyBoundary--
 
+
 ### get files
-GET http://localhost:6688/api/files/1/0e1/907/702a2d2fe4dc56a8e682316556d5ff09b9.png
+
+GET http://localhost:6688/api/files/1/339/807/e635afbeab088ce33206fdf4223a6bb156.png
 Authorization: Bearer {{token}}
 
+
 ### send a message
+
 POST http://localhost:6688/api/chats/1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "content": "Hello, World!",
+    "content": "Hello, Team!",
     "files": []
 }
 
+### send a message
+
+POST http://localhost:6688/api/chats/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "content": "How's the project going?",
+    "files": []
+}
+
+### send a message
+
+POST http://localhost:6688/api/chats/1
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+    "content": "Hi everyone! Just joined the conversation.",
+    "files": []
+}
+
+### send a message
+
+POST http://localhost:6688/api/chats/1
+Content-Type: application/json
+Authorization: Bearer {{token1}}
+
+{
+    "content": "Can we set a deadline for the next milestone?",
+    "files": []
+}
 ### get messages
-GET http://localhost:6688/api/chats/1/messages
+
+GET http://localhost:6688/api/chats/1/messages?limit=6&last_id=5
 Authorization: Bearer {{token}}
