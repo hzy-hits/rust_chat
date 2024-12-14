@@ -16,7 +16,6 @@ impl AppState {
         Ok(ws)
     }
 
-    #[allow(dead_code)]
     pub async fn fetch_all_chat_users(&self, id: u64) -> Result<Vec<ChatUser>, AppError> {
         let users = sqlx::query_as(
             r#"

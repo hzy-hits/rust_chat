@@ -3,7 +3,7 @@ POST http://localhost:6688/api/signup
 Content-Type: application/json
 
 {
-    "workspace": "family",
+    "workspace": "test",
     "username": "Alice Chen",
     "email": "alice@acme.org",
     "password": "123456"
@@ -14,7 +14,7 @@ POST http://localhost:6688/api/signup
 Content-Type: application/json
 
 {
-    "workspace": "family",
+    "workspace": "test",
     "username": "Bob Chen",
     "email": "bob@acme.org",
     "password": "123456"
@@ -83,5 +83,5 @@ Authorization: Bearer {{token}}
 }
 
 ### get messages
-GET http://localhost:6688/api/chats/1/messages?limit=6&last_id=5
+GET http://localhost:6688/api/chats/1/messages
 Authorization: Bearer {{token}}
