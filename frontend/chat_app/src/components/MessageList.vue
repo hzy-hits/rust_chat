@@ -10,19 +10,15 @@
         class="flex items-start mb-5"
       >
         <img
-          :src="`https://ui-avatars.com/api/?name=${getSender(
-            message.senderId
-          ).username.replace(' ', '+')}`"
+          :src="`https://ui-avatars.com/api/?name=${getUsername(message.senderId)}`"
           class="w-10 h-10 rounded-full mr-3"
           alt="Avatar"
         />
         <div class="max-w-4/5">
           <div class="flex items-center mb-1">
-            <span class="font-bold mr-2">{{
-              getSender(message.senderId).username
-            }}</span>
+            <span class="font-bold mr-2">{{ getUsername(message.senderId) }}</span>
             <span class="text-xs text-gray-500">{{
-              message.formattedCreatedAt
+              message.formattedCreatedAt || message.createdAt
             }}</span>
           </div>
           <div class="text-sm leading-relaxed break-words whitespace-pre-wrap">
@@ -42,11 +38,12 @@ export default {
     },
     activeChannelId() {
       let channel = this.$store.state.activeChannel;
-      if (!channel) {
-        return null;
-      }
-      return channel.id;
+      return channel ? channel.id : null;
     },
+    // 添加用户数据就绪状态的计算属性
+    usersLoaded() {
+      return Object.keys(this.$store.state.users || {}).length > 0;
+    }
   },
   watch: {
     messages: {
@@ -68,7 +65,12 @@ export default {
       this.$store.dispatch("fetchMessagesForChannel", channelId);
     },
     getSender(userId) {
-      return this.$store.getters.getUserById(userId);
+      return this.$store.getters.getUserById(userId) || { username: 'Unknown User' };
+    },
+    // 新增一个专门处理用户名的方法
+    getUsername(userId) {
+      const user = this.getSender(userId);
+      return (user?.username || 'Unknown User').replace(' ', '+');
     },
     scrollToBottom() {
       const container = this.$refs.messageContainer;
@@ -77,9 +79,13 @@ export default {
       }
     },
   },
-  mounted() {
+  async mounted() {
+    // 确保用户数据已加载
+    if (!this.usersLoaded) {
+      await this.$store.dispatch('fetchWorkspaceUsers');
+    }
     if (this.activeChannelId) {
-      this.fetchMessages(this.activeChannelId);
+      await this.fetchMessages(this.activeChannelId);
     }
     this.scrollToBottom();
   },
