@@ -141,21 +141,18 @@ export default createStore({
               Authorization: `Bearer ${state.token}`,
             },
           });
-    
-          // 把返回的用户列表转换为一个 Map（id -> user）
+
           const users = response.data;
           const usersMap = {};
           users.forEach((u) => {
             usersMap[u.id] = u;
           });
-    
-          // 将用户数据存入 Vuex state
+
           commit('setUsers', usersMap);
-    
-          // 更新 localStorage 中的 users
+
           localStorage.setItem('users', JSON.stringify(usersMap));
-    
-          return users; // 如果需要在组件中使用结果，可以返回用户数组
+
+          return users;
         } catch (error) {
           console.error('Failed to fetch workspace users:', error);
           throw error;
@@ -166,13 +163,13 @@ export default createStore({
           if (!Array.isArray(members)) {
             throw new Error('Members must be an array');
           }
-      
+
           const uniqueMembers = [...new Set([...members, state.user.id])];
-      
+
           if (uniqueMembers.length < 2) {
             throw new Error('Chat must have at least 2 members');
           }
-      
+
           let chatType;
           if (uniqueMembers.length === 2 && !name) {
             chatType = 'single';
@@ -181,35 +178,33 @@ export default createStore({
           } else {
             chatType = 'group';
           }
-      
-          // 构建基础请求体，始终包含 public 字段
+
           const payload = {
             type: chatType,
             members: uniqueMembers.map(id => parseInt(id)),
             wsId: parseInt(state.workspace.id),
             public: Boolean(isPublic) // 始终包含 public 字段
           };
-      
-          // 添加可选的 name 字段
+
           if (name && name.trim().length > 0) {
             if (name.trim().length < 3) {
               throw new Error('Chat name must have at least 3 characters');
             }
             payload.name = name.trim();
           }
-      
+
           if (uniqueMembers.length > 8 && !payload.name) {
             throw new Error('Group chat with more than 8 members must have a name');
           }
-      
+
           console.log('Creating chat with payload:', payload);
-      
+
           const response = await axios.post(`${getUrlBase()}/chats`, payload, {
             headers: {
               Authorization: `Bearer ${state.token}`,
             },
           });
-      
+
           const chat = response.data;
           commit('addChannel', chat);
           return chat;

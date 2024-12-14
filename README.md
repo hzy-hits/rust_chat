@@ -5,6 +5,162 @@
 This project is a discord like chat application backend built with Rust, utilizing the **axum** framework for HTTP communication. It supports robust and scalable real-time messaging, including features such as **user authentication**, **one-to-one chats**, **group chats**, and **file sharing**. PostgreSQL serves as the database, with operations managed by the **sqlx** library. For real-time updates, **Server-Sent Events (SSE)** are used to deliver notifications to clients.
 
 ---
+## Project Architecture
+```bash
+.
+├── CHANGELOG.md
+├── Cargo.lock
+├── Cargo.toml
+├── Makefile
+├── README.md
+├── _typos.toml
+├── asset
+│   └── notify_server.png
+├── chat_core
+│   ├── Cargo.toml
+│   ├── fixtures
+│   │   ├── decoding.pem
+│   │   └── encoding.pem
+│   └── src
+│       ├── lib.rs
+│       ├── middlewares
+│       └── utils
+├── chat_server
+│   ├── Cargo.toml
+│   ├── app.yml
+│   ├── fixtures
+│   │   └── test.sql
+│   ├── sql
+│   │   └── init.sql
+│   └── src
+│       ├── config.rs
+│       ├── error.rs
+│       ├── handlers
+│       ├── lib.rs
+│       ├── main.rs
+│       ├── middlewares
+│       ├── models
+│       └── openapi.rs
+├── chat_test
+│   ├── Cargo.toml
+│   ├── app.yml
+│   ├── notify.yml
+│   ├── src
+│   │   └── lib.rs
+│   └── tests
+│       └── chat.rs
+├── cliff.toml
+├── deny.toml
+├── docker-compose.yml
+├── frontend
+│   └── chat_app
+│       ├── README.md
+│       ├── dist
+│       ├── index.html
+│       ├── package.json
+│       ├── postcss.config.cjs
+│       ├── public
+│       ├── src
+│       ├── src-tauri
+│       ├── tailwind.config.js
+│       ├── vite.config.js
+│       └── yarn.lock
+├── migrations
+│   ├── 20241204031634_initial.sql
+│   └── 20241212012654_trigger.sql
+├── notify_server
+│   ├── Cargo.toml
+│   ├── index.html
+│   ├── notify.yml
+│   └── src
+│       ├── config.rs
+│       ├── error.rs
+│       ├── lib.rs
+│       ├── main.rs
+│       ├── notify.rs
+│       └── sse.rs
+├── reset_db.sh
+├── sql
+├── test.rest
+```
+## Quick Start
+
+This project is a simple chat application with the following components:
+- **Rust backend**:
+  - `chat_server`: Manages chat functionality.
+  - `notify_server`: Handles notifications.
+- **Vue frontend**: A user interface for chatting and account management.
+- **PostgreSQL database**: Stores user and chat data.
+
+### pre-requisite
+
+Before you begin, make sure you have the following installed:
+1. **Rust**: Install Rust from [https://rustup.rs/](https://rustup.rs/)
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+2. SQLx CLI: Install SQLx CLI for database migrations:
+
+```bash
+cargo install sqlx-cli --no-default-features --features postgres
+```
+
+3. Install **Docker** and **Docker Compose** for running PostgreSQL:
+
+### Running the Application
+1. Start the PostgreSQL database using Docker Compose:
+```bash
+docker-compose up -d
+```
+The database will be available at `postgresql://postgres:password@localhost:15432/mydatabase`.
+2. Run the backend services:
+```bash
+cargo run --bin chat_server --release
+cargo run --bin notify_server --release
+```
+The chat server will be available at `http://localhost:6688`, and the notification server at `http://localhost:6687`.
+3. Start the frontend application:
+```bash
+python -m http.server --directory frontend/chat_app/dist 1420
+```
+The frontend will be available at `http://localhost:1420`.
+
+### Resetting the Database
+To reset the database and clear all data, run the `reset_db.sh` script:
+```bash
+./reset_db.sh
+```
+It would use sqlx-cli to run the migrations and seed the database with test data.
+
+## Design Choices
+
+- Stateless Protocol and JWT Authentication:
+
+    - Since HTTP is stateless, the application uses JWT tokens for user authentication.
+
+    - Upon user sign-in, a connection to the SSE (Server-Sent Events) server is established to maintain state and receive real-time notifications.
+
+- State Management with DashMap:
+
+    - A DashMap is used to store user IDs as keys and sender channels as values.
+
+    - The SSE server listens for database notifications and sends messages to the corresponding user channels.
+## Frontend Screenshots
+![signin page](./asset/signin.png)
+*Signin Page*
+![signup page](./asset/signup.png)
+*Signup Page*
+![chat page](./asset/chat.png)
+*Chat Page*
+![create single chat](./asset/create_single_chat.png)
+*Create Single Chat*
+![single chat screenshot](./asset/singlechat.png)
+*Single Chat*
+![multiple user chat](./asset/multiple_chat.png)
+*Multiple User Chat*
+
+
+
 
 ## Features
 
