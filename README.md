@@ -4,6 +4,8 @@
 
 This project is a discord like chat application backend built with Rust, utilizing the **axum** framework for HTTP communication. It supports robust and scalable real-time messaging, including features such as **user authentication**, **one-to-one chats**, **group chats**, and **file sharing**. PostgreSQL serves as the database, with operations managed by the **sqlx** library. For real-time updates, **Server-Sent Events (SSE)** are used to deliver notifications to clients.
 
+## Demo video
+https://drive.google.com/file/d/1hnHF-FPT7gCX_VoQ7t302f9yUr-mO2Ib/view?usp=drive_link
 ---
 ## Project Architecture
 ```bash
@@ -158,6 +160,7 @@ It would use sqlx-cli to run the migrations and seed the database with test data
 *Single Chat*
 ![multiple user chat](./asset/multiple_chat.png)
 *Multiple User Chat*
+
 
 
 
